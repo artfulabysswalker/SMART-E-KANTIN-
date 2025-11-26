@@ -1,61 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../Database/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  final VoidCallback? showLoginPage;
+  const RegisterPage({Key? key, this.showLoginPage}) : super(key: key);
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // STEP 1: CONTROLLERS UNTUK MENGINPUT DATA
-  // Controller untuk input NIM (8+ karakter)
   final _nimController = TextEditingController();
-  // Controller untuk input email (format email yang valid)
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  // Controller untuk input password (minimal 6 karakter)
   final _passwordController = TextEditingController();
-  // Controller untuk input konfirmasi password
   final _confirmPasswordController = TextEditingController();
 
-  // STEP 2: FORM KEY UNTUK VALIDASI FORM
-  // Key ini digunakan untuk memvalidasi form sebelum submit
   final _formKey = GlobalKey<FormState>();
 
-  // STEP 3: STATE VARIABLES UNTUK MANAGE STATE
-  // Untuk menyembunyikan/menampilkan password
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  // Untuk loading state saat proses register
+
   bool _isLoading = false;
 
-  // STEP 4: FUNGSI-FUNGSI VALIDASI
-  // Validasi NIM: tidak boleh kosong dan minimal 8 karakter
   String? _validateNIM(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'NIM tidak boleh kosong';
     }
-    if (value.length < 8) {
+    final trimmed = value.trim();
+    if (trimmed.length < 8) {
       return 'NIM minimal 8 karakter';
     }
     return null;
   }
 
-  // Validasi Email: menggunakan regex untuk format email
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Nama lengkap tidak boleh kosong';
+    }
+    if (value.trim().length < 2) {
+      return 'Nama terlalu pendek';
+    }
+    return null;
+  }
+
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Email tidak boleh kosong';
     }
-    // Regex pattern untuk validasi email
-    const emailPattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+    const emailPattern =
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
     final regex = RegExp(emailPattern);
-    if (!regex.hasMatch(value)) {
+    if (!regex.hasMatch(value.trim())) {
       return 'Format email tidak valid';
     }
     return null;
   }
 
-  // Validasi Password: tidak boleh kosong dan minimal 6 karakter
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password tidak boleh kosong';
@@ -66,7 +69,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // Validasi Confirm Password: harus sama dengan password
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Konfirmasi password tidak boleh kosong';
@@ -77,38 +79,158 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // STEP 5: FUNGSI REGISTER
-  // Fungsi async untuk proses register ke database
+  @override
+  void dispose() {
+    // Dispose semua controller (including name)
+    _nimController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  /// Check if a mahasiswa document with the same NIM already exists.
+  Future<bool> _nimExists(String nim) async {
+    final q = await FirebaseFirestore.instance
+        .collection('mahasiswa')
+        .where('usernim', isEqualTo: nim)
+        .limit(1)
+        .get();
+    return q.docs.isNotEmpty;
+  }
+
+  /// Create firebase auth account
+  Future<UserCredential> _createFirebaseUser({
+    required String email,
+    required String password,
+  }) {
+    return FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  /// Add the user document to Firestore using a random generated doc id.
+  /// We also store the auth uid inside the document (authUid) for possible future linking.
+  Future<void> _addUserDetails({
+    required String usernim,
+    required String email,
+    required String fullname,
+    required String authUid,
+  }) async {
+    // generate random document id
+    final useruid = FirebaseFirestore.instance.collection('mahasiswa').doc().id;
+
+    final newuser = UserModel(
+      useruid: useruid,
+      usernim: usernim,
+      email: email,
+      fullname: fullname,
+      // if your model supports more fields, you can pass authUid there; if not, we'll add via map
+    );
+
+    final userJson = newuser.toJson();
+
+    // attach authUid in the saved document so it's possible to correlate later
+    userJson['authUid'] = authUid;
+
+    await FirebaseFirestore.instance
+        .collection('mahasiswa')
+        .doc(useruid)
+        .set(userJson);
+  }
+
   Future<void> _register() async {
-    // Validasi form terlebih dahulu
+    // Validate form first
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Set loading true
+    final nim = _nimController.text.trim();
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Simulasi delay untuk proses register (2 detik)
-      await Future.delayed(const Duration(seconds: 2));
+      // 1) Check NIM uniqueness (since you wanted random Firestore ID, we enforce unique NIM if required)
+      final exists = await _nimExists(nim);
+      if (exists) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('NIM sudah terdaftar. Gunakan NIM lain.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
-      // TODO: Ganti dengan query Firestore sebenarnya
-      // Contoh Firestore query:
-      // await FirebaseFirestore.instance.collection('mahasiswa').doc(nimController.text).set({
-      //   'nim': _nimController.text,
-      //   'email': _emailController.text,
-      //   'password': _passwordController.text, // Sebaiknya encrypt password
-      //   'createdAt': FieldValue.serverTimestamp(),
-      // });
+      // 2) Create Firebase Auth user
+      UserCredential userCredential;
+      try {
+        userCredential = await _createFirebaseUser(email: email, password: password);
+      } on FirebaseAuthException catch (e) {
+        // Specific FirebaseAuth error handling
+        setState(() {
+          _isLoading = false;
+        });
+        String message = 'Terjadi kesalahan pada pendaftaran.';
+        if (e.code == 'email-already-in-use') {
+          message = 'Email sudah digunakan.';
+        } else if (e.code == 'weak-password') {
+          message = 'Password terlalu lemah.';
+        } else if (e.code == 'invalid-email') {
+          message = 'Email tidak valid.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+        return;
+      }
 
-      // Set loading false
+      final authUid = userCredential.user?.uid ?? '';
+
+      // 3) Save to Firestore using random document id. If Firestore fails, remove the created auth user to avoid orphan account.
+      try {
+        await _addUserDetails(
+          usernim: nim,
+          email: email,
+          fullname: name,
+          authUid: authUid,
+        );
+      } catch (e) {
+        // Firestore write failed: cleanup created auth user
+        try {
+          await userCredential.user?.delete();
+        } catch (_) {
+          // ignore deletion errors, but log if needed
+        }
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan data pengguna: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Success
       setState(() {
         _isLoading = false;
       });
 
-      // Tampilkan pesan sukses
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Register berhasil! Silakan login'),
@@ -116,48 +238,30 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
 
-      // Navigate ke login page
+      // Navigate to login page
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
-      // Set loading false
+      // General fallback error
       setState(() {
         _isLoading = false;
       });
-
-      // Tampilkan pesan error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
 
   @override
-  void dispose() {
-    // Dispose semua controller
-    _nimController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar'),
-      ),
+      appBar: AppBar(title: const Text('Daftar')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              // STEP 6: UI - INPUT NIM
-              // Field input untuk NIM
+              // INPUT NIM
               TextFormField(
                 controller: _nimController,
                 decoration: const InputDecoration(
@@ -169,8 +273,19 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 16),
 
-              // STEP 7: UI - INPUT EMAIL
-              // Field input untuk email
+              // INPUT FULL NAME
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  border: OutlineInputBorder(),
+                  hintText: 'Masukkan nama lengkap',
+                ),
+                validator: _validateName,
+              ),
+              const SizedBox(height: 16),
+
+              // INPUT EMAIL
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -179,18 +294,18 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'Masukkan email (format: email@domain.com)',
                 ),
                 validator: _validateEmail,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
 
-              // STEP 8: UI - INPUT PASSWORD
-              // Field input untuk password dengan toggle show/hide
+              // INPUT PASSWORD
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   border: const OutlineInputBorder(),
-                  hintText: 'Masukkan password (minimal 6 karakter)',
+                  hintText: 'Masukkan password (r)',
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -206,8 +321,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 16),
 
-              // STEP 9: UI - INPUT CONFIRM PASSWORD
-              // Field input untuk konfirmasi password dengan toggle show/hide
+              // INPUT CONFIRM PASSWORD
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
@@ -230,8 +344,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 24),
 
-              // STEP 10: UI - TOMBOL REGISTER
-              // Tombol untuk submit form register
+              // BUTTON REGISTER
               ElevatedButton(
                 onPressed: _isLoading ? null : _register,
                 style: ElevatedButton.styleFrom(
@@ -242,7 +355,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -250,8 +365,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 12),
 
-              // STEP 11: UI - LINK UNTUK LOGIN
-              // Link untuk ke halaman login jika sudah punya akun
+              // LINK TO LOGIN
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
