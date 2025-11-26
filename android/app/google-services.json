@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "567026642506",
+    "project_id": "smart-e-kantin",
+    "storage_bucket": "smart-e-kantin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567026642506:android:7eb732db927ae6be0fc0b3",
+        "android_client_info": {
+          "package_name": "com.example.ekantin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCQlKwCn_omSAyDlhr-xPa0tjHCB2c-Jg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
