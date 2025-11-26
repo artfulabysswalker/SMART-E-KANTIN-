@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
-import 'main_page.dart'; // Make sure class name inside is MainPage
+import 'auth/main_page.dart'; // Make sure class name inside is MainPage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
