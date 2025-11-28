@@ -29,7 +29,9 @@ class _DashboardPageState extends State<DashboardPage> {
             MaterialButton(
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
-                
+                if (mounted) {
+                  Navigator.of(context).pushReplacementNamed('/');
+                }
               },
               color: Colors.blue,
               textColor: Colors.white,
