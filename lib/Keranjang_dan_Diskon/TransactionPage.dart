@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pointspage.dart';
+import 'discount.dart';
 import '../Database/user_model.dart';
 
 class TransactionPage extends StatefulWidget {
@@ -31,8 +32,8 @@ class _TransactionPageState extends State<TransactionPage> {
   Future<void> _loadCurrentUser() async {
     final firebaseUser = FirebaseAuth.instance.currentUser;
     if (firebaseUser != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection("users")
+        final doc = await FirebaseFirestore.instance
+          .collection("mahasiswa")
           .doc(firebaseUser.uid)
           .get();
 
@@ -80,6 +81,23 @@ class _TransactionPageState extends State<TransactionPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => PointsPage(
+                    cartItems: widget.cartItems,
+                    total: widget.total,
+                    user: currentUser!,
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("Apply NIM Discount"),
+            subtitle: const Text('Diskon ganjil/genap berdasarkan NIM pengguna'),
+            trailing: const Icon(Icons.local_offer),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DiscountPage(
                     cartItems: widget.cartItems,
                     total: widget.total,
                     user: currentUser!,
