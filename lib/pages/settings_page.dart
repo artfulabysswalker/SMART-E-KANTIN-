@@ -15,15 +15,6 @@ class SettingsPage extends StatelessWidget {
 
       body: ListView(
         children: [
-          // ----------- ACCOUNT SETTINGS -----------
-          ListTile(
-            leading: const Icon(Icons.person, color: Colors.orange),
-            title: const Text("Account", style: TextStyle(fontSize: 16)),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {},
-          ),
-
-          const Divider(),
 
           // ----------- NOTIFICATIONS -----------
         ListTile(
