@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+
 import 'cart.dart';
 import 'TransactionPage.dart';
 import '../Database/product_model.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key}); // No more currentUser required
+  const CartPage({super.key});
 
   @override
   State<CartPage> createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
+  final NumberFormat rupiah = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
   @override
   Widget build(BuildContext context) {
     final cart = Cart.cart;
@@ -58,18 +66,16 @@ class _CartPageState extends State<CartPage> {
                 productPrice: (data['productPrice'] ?? 0).toDouble(),
                 stock: data['stock'] ?? 0,
                 productDescription: data['productDescription'] ?? '',
-                productImageUrl: '', // Removed image
+                productImageUrl: '', // No image
               );
 
               final quantity = Cart.getQuantity(product);
 
-              
               if (quantity == 0) return const SizedBox.shrink();
 
               return Card(
                 elevation: 2,
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -89,7 +95,7 @@ class _CartPageState extends State<CartPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "\$${product.productPrice.toStringAsFixed(2)}",
+                              rupiah.format(product.productPrice),
                               style: const TextStyle(
                                   color: Colors.grey, fontSize: 14),
                             ),

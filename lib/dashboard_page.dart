@@ -2,8 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
+
 import '../Database/product_model.dart';
 import '../Database/user_model.dart';
+import '../Database/dummy.dart';
 import 'keranjang_dan_Diskon/cart.dart';
 import 'keranjang_dan_Diskon/cart_page.dart';
 import 'pages/profile_page.dart';
@@ -20,6 +23,12 @@ class _DashboardPageState extends State<DashboardPage> {
   User? firebaseUser;
   UserModel? currentUserModel;
   bool isLoadingUser = true;
+
+  final NumberFormat rupiahFormat = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -55,10 +64,22 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     if (mounted) {
-      setState(() {
-        isLoadingUser = false;
-      });
+      setState(() => isLoadingUser = false);
     }
+  }
+
+  // Converts dummy data → ProductModel list
+  List<ProductModel> loadDummy() {
+    return dummyMenuData.map((e) {
+      return ProductModel(
+        productId: e["productId"],
+        productName: e["productName"],
+        productDescription: e["productDescription"],
+        productPrice: (e["productPrice"] ?? 0).toDouble(),
+        stock: e["stock"],
+        productImageUrl: e["productImageUrl"],
+      );
+    }).toList();
   }
 
   @override
@@ -66,14 +87,10 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: const Text(
-          "Dashboard",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Dashboard", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
           IconButton(
-            alignment: Alignment.centerLeft,
             icon: const Icon(Icons.info_outline, color: Colors.white),
             onPressed: () {
               if (currentUserModel != null) {
@@ -85,60 +102,57 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              );
+                  context, MaterialPageRoute(builder: (_) => const SettingsPage()));
             },
           ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.shopping_cart),
         onPressed: () {
           if (currentUserModel != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => CartPage()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => CartPage()));
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("User not loaded yet")),
             );
           }
         },
-        child: const Icon(Icons.shopping_cart),
       ),
+
       body: isLoadingUser
           ? const Center(child: CircularProgressIndicator())
           : StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection("items").snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection("items")
+                  .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Error loading data"));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No items found"));
-                }
+                List<ProductModel> items = [];
 
-                final docs = snapshot.data!.docs;
+                // If Firebase fails → use dummy
+                if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    snapshot.data!.docs.isEmpty) {
+                  items = loadDummy();
+                } else {
+                  // Load Firestore data
+                  items = snapshot.data!.docs
+                      .map((doc) => ProductModel.fromJson(
+                          doc.id, doc.data() as Map<String, dynamic>))
+                      .toList();
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: docs.length,
+                  itemCount: items.length,
                   itemBuilder: (context, index) {
-                    final doc = docs[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    final product = ProductModel.fromJson(doc.id, data);
+                    final product = items[index];
 
                     return Card(
                       elevation: 3,
                       margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
+                          horizontal: 12, vertical: 10),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
@@ -147,42 +161,43 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // PRODUCT IMAGE
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: product.productImageUrl.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: product.productImageUrl,
-                                      height: 120,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          const Center(
-                                              child:
-                                                  CircularProgressIndicator()),
-                                      errorWidget: (context, url, error) =>
-                                          const Icon(
-                                              Icons.image_not_supported,
-                                              size: 60),
-                                    )
-                                  : const Icon(
-                                      Icons.image_not_supported,
-                                      size: 60,
-                                    ),
+                              child: CachedNetworkImage(
+                                imageUrl: product.productImageUrl,
+                                height: 120,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    const Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) =>
+                                    const Icon(Icons.image_not_supported, size: 60),
+                              ),
                             ),
+
                             const SizedBox(height: 10),
+
+                            // NAME
                             Text(
                               product.productName,
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
+
                             const SizedBox(height: 6),
+
+                            // DETAILS
                             Text(
-                              "Price: \$${product.productPrice}\nStock: ${product.stock}\n${product.productDescription}",
+                              "Harga: ${rupiahFormat.format(product.productPrice)}\n"
+                              "Stok: ${product.stock}\n"
+                              "${product.productDescription}",
                               style: const TextStyle(fontSize: 14),
                             ),
+
                             const SizedBox(height: 12),
+
+                            // ADD BUTTON
                             Align(
                               alignment: Alignment.centerRight,
                               child: GestureDetector(
@@ -197,9 +212,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
+                                      horizontal: 16, vertical: 10),
                                   decoration: BoxDecoration(
                                     color: Colors.orange,
                                     borderRadius: BorderRadius.circular(12),
@@ -207,9 +220,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                   child: const Text(
                                     "Add",
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
