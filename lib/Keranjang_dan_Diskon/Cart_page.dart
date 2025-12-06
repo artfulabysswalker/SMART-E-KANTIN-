@@ -22,7 +22,7 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cart = Cart.cart;
+    final cart = Cart_hillmi.cart;
 
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +69,7 @@ class _CartPageState extends State<CartPage> {
                 productImageUrl: '', // No image
               );
 
-              final quantity = Cart.getQuantity(product);
+              final quantity = Cart_hillmi.getQuantity(product);
 
               if (quantity == 0) return const SizedBox.shrink();
 
@@ -109,7 +109,7 @@ class _CartPageState extends State<CartPage> {
                                 color: Colors.red),
                             onPressed: () {
                               setState(() {
-                                Cart.removeOne(product);
+                                Cart_hillmi.removeOne(product);
                               });
                             },
                           ),
@@ -120,7 +120,7 @@ class _CartPageState extends State<CartPage> {
                                 color: Colors.green),
                             onPressed: () {
                               setState(() {
-                                Cart.add(product);
+                                Cart_hillmi.add(product);
                               });
                             },
                           ),
@@ -148,8 +148,8 @@ class _CartPageState extends State<CartPage> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => TransactionPage(
-                        cartItems: Cart.cart,
-                        total: Cart.totalPrice(),
+                        cartItems: Cart_hillmi.cart,
+                        total: Cart_hillmi.totalPrice(),
                       ),
                     ),
                   );

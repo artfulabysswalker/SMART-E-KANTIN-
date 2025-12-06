@@ -385,7 +385,7 @@ class _LoginPageState extends State<LoginPage> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const RegisterPage()),
+                                MaterialPageRoute(builder: (_) => const RegisterPage_baruna()),
                               );
                             },
                             child: const Text(

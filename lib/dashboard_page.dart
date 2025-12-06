@@ -128,6 +128,19 @@ class _DashboardPageState extends State<DashboardPage> {
                   .collection("items")
                   .snapshots(),
               builder: (context, snapshot) {
+                // Loading state: septa
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Error loading data"));
+                }
+
+                if (!snapshot.hasData && snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("No items found"));
+                }
+
                 List<ProductModel> items = [];
 
                 // If Firebase fails → use dummy
@@ -202,7 +215,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               alignment: Alignment.centerRight,
                               child: GestureDetector(
                                 onTap: () {
-                                  Cart.add(product);
+                                  Cart_hillmi.add(product);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
