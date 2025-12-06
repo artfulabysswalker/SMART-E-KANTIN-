@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Temp Auth UI',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const mainpage(), // 🔥 FIXED (class must be MainPage)
+      home: const MainPage(), // 🔥 FIXED (class must be MainPage)
       debugShowCheckedModeBanner: false,
     );
   }
