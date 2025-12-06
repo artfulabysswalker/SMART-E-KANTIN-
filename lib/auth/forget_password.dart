@@ -206,160 +206,290 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: const Text('Lupa Password'),
+        backgroundColor: Colors.orange,
+        title: const Text(
+          'Lupa Password',
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
             children: [
-              // STEP 6: UI - JUDUL
-              const Padding(
-                padding: EdgeInsets.only(bottom: 24.0),
-                child: Text(
-                  'Atur Ulang Password',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              // Header dengan background pattern
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0A0A23),
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/bg_pattern.png'),
+                    fit: BoxFit.cover,
+                    opacity: 0.3,
                   ),
-                  textAlign: TextAlign.center,
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Atur Ulang Password',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Masukkan data Anda untuk melanjutkan',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
                 ),
               ),
+              // Card Form
+              Transform.translate(
+                offset: const Offset(0, -40),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
 
               // JIKA BELUM VERIFIKASI: TAMPILKAN FORM VERIFIKASI NIM & EMAIL
               if (!_credentialsVerified) ...[
                 // Teks keterangan
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    'Masukkan NIM dan Email Anda untuk verifikasi',
-                    style: TextStyle(fontSize: 14),
+                const Text(
+                  'Verifikasi Data Diri',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
+                const SizedBox(height: 16),
 
                 // STEP 7: UI - INPUT NIM (TAHAP VERIFIKASI)
-                TextFormField(
-                  controller: _nimController,
-                  decoration: const InputDecoration(
-                    labelText: 'NIM',
-                    border: OutlineInputBorder(),
-                    hintText: 'Masukkan NIM Anda',
+                const Text(
+                  'NIM',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  validator: _validateNIM,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F4F4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextFormField(
+                    controller: _nimController,
+                    decoration: const InputDecoration(
+                      hintText: 'Masukkan NIM Anda',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    validator: _validateNIM,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // STEP 8: UI - INPUT EMAIL (TAHAP VERIFIKASI)
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    hintText: 'Masukkan email Anda',
+                const Text(
+                  'Email',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  validator: _validateEmail,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F4F4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      hintText: 'Masukkan email Anda',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    validator: _validateEmail,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
                 // STEP 9: UI - TOMBOL VERIFIKASI
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _verifyCredentials,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                GestureDetector(
+                  onTap: _isLoading ? null : _verifyCredentials,
+                  child: Container(
+                    height: 50,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                          : const Text(
+                              'Verifikasi',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Verifikasi'),
                 ),
               ] else ...[
                 // JIKA SUDAH VERIFIKASI: TAMPILKAN FORM RESET PASSWORD
 
                 // Teks keterangan
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    'Silakan buat password baru Anda',
-                    style: TextStyle(fontSize: 14),
+                const Text(
+                  'Buat Password Baru',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
+                const SizedBox(height: 16),
 
                 // STEP 10: UI - INPUT PASSWORD BARU
-                TextFormField(
-                  controller: _newPasswordController,
-                  obscureText: _obscureNewPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password Baru',
-                    border: const OutlineInputBorder(),
-                    hintText: 'Masukkan password baru (minimal 6 karakter)',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureNewPassword = !_obscureNewPassword;
-                        });
-                      },
-                    ),
+                const Text(
+                  'Password Baru',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  validator: _validateNewPassword,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F4F4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextFormField(
+                    controller: _newPasswordController,
+                    obscureText: _obscureNewPassword,
+                    decoration: InputDecoration(
+                      hintText: 'Minimal 6 karakter',
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureNewPassword = !_obscureNewPassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: _validateNewPassword,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // STEP 11: UI - INPUT CONFIRM PASSWORD BARU
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Konfirmasi Password',
-                    border: const OutlineInputBorder(),
-                    hintText: 'Masukkan ulang password baru',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                    ),
+                const Text(
+                  'Konfirmasi Password',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  validator: _validateConfirmPassword,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F4F4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan ulang password baru',
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: _validateConfirmPassword,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
                 // STEP 12: UI - TOMBOL RESET PASSWORD
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _resetPassword,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                GestureDetector(
+                  onTap: _isLoading ? null : _resetPassword,
+                  child: Container(
+                    height: 50,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                          : const Text(
+                              'Atur Ulang Password',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Atur Ulang Password'),
                 ),
 
                 // STEP 13: UI - TOMBOL KEMBALI KE VERIFIKASI
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () {
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () {
                     setState(() {
                       _credentialsVerified = false;
                       _nimController.clear();
@@ -368,12 +498,30 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                       _confirmPasswordController.clear();
                     });
                   },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Container(
+                    height: 50,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.orange, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Kembali ke Verifikasi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Text('Kembali ke Verifikasi'),
                 ),
               ],
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
