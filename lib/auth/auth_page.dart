@@ -22,7 +22,7 @@ void togglePages() {
     if (showLoginPage) {
       return LoginPage(showRegisterPage: togglePages);
     } else {
-      return RegisterPage(showLoginPage: togglePages);
+      return RegisterPage_baruna(showLoginPage: togglePages);
     }
   }
 }

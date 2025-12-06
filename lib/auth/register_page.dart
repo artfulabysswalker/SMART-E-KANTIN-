@@ -4,17 +4,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../Database/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage_baruna extends StatefulWidget {
   //pembuat mathew 
   // callback to show login page
   final VoidCallback? showLoginPage;
-  const RegisterPage({Key? key, this.showLoginPage}) : super(key: key);
+  const RegisterPage_baruna({Key? key, this.showLoginPage}) : super(key: key);
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<RegisterPage_baruna> createState() => _RegisterPageState();
 }
 // pembuat zenvero
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage_baruna> {
   final _nimController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
