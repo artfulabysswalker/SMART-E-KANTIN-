@@ -29,7 +29,7 @@ class ReceiptPage extends StatelessWidget {
             Text("Total: ${rupiahFormat.format(trxData['total'])}"),
             Text("Status: ${trxData['status']}"),
             const SizedBox(height: 16),
-
+//
             Expanded(
               child: ListView.builder(
                 itemCount: items.length,
