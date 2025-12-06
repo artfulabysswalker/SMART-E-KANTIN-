@@ -258,7 +258,6 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 12),
 
               // STEP 11: UI - LINK UNTUK REGISTER
-              // Link untuk ke halaman register jika belum punya akun
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
