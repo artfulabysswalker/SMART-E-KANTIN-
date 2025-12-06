@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'forget_password.dart';
 import 'register_page.dart';
 
@@ -22,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _rememberMe = false;
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) return 'Email tidak boleh kosong';
@@ -48,6 +50,21 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
+      // Simpan credentials jika Remember Me diaktifkan
+      if (_rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('saved_email', _emailController.text.trim());
+        await prefs.setString('saved_password', _passwordController.text.trim());
+        await prefs.setBool('remember_me', true);
+      } else {
+        // Hapus credentials jika Remember Me dinonaktifkan
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('saved_email');
+        await prefs.remove('saved_password');
+        await prefs.setBool('remember_me', false);
+      }
+
+      if (!mounted) return;
       setState(() => _isLoading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,6 +76,7 @@ class _LoginPageState extends State<LoginPage> {
 
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -67,6 +85,29 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    final savedEmail = prefs.getString('saved_email') ?? '';
+    final savedPassword = prefs.getString('saved_password') ?? '';
+
+    if (mounted) {
+      setState(() {
+        _rememberMe = rememberMe;
+        if (rememberMe) {
+          _emailController.text = savedEmail;
+          _passwordController.text = savedPassword;
+        }
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
   }
 
   @override
@@ -191,25 +232,43 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 10),
 
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ForgetPasswordPage(),
+                      // Remember Me Checkbox
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() => _rememberMe = value ?? false);
+                                },
+                                activeColor: Colors.orange,
                               ),
-                            );
-                          },
-                          child: const Text(
-                            "Lupa Password?",
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
+                              const Text(
+                                'Ingat saya',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ForgetPasswordPage(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              "Lupa Password?",
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
 
                       const SizedBox(height: 20),

@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
@@ -93,16 +95,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     try {
       // Simulasi delay untuk proses verifikasi database (1 detik)
       await Future.delayed(const Duration(seconds: 1));
-
-      // TODO: Ganti simulasi ini dengan hasil query sebenarnya
-      // Contoh Firestore query untuk verifikasi NIM & Email:
-      // final result = await FirebaseFirestore.instance
-      //     .collection('mahasiswa')
-      //     .where('nim', isEqualTo: _nimController.text)
-      //     .where('email', isEqualTo: _emailController.text)
-      //     .get();
-      //
-      // bool credentialsValid = result.docs.isNotEmpty;
 
       // Sekarang set ke true, ubah ke false jika ingin test tidak ketemu
       bool credentialsValid = true;
