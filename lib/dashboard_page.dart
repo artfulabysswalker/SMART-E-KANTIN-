@@ -118,12 +118,14 @@ class _DashboardPageState extends State<DashboardPage> {
               stream:
                   FirebaseFirestore.instance.collection("items").snapshots(),
               builder: (context, snapshot) {
+                // pembuat septa
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
                   return const Center(child: Text("Error loading data"));
                 }
+                // pembuat septa
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text("No items found"));
                 }
