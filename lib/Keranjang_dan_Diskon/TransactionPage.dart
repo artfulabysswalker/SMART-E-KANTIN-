@@ -29,6 +29,7 @@ class _TransactionPageState extends State<TransactionPage> {
     _loadCurrentUser();
   }
 
+  // collection
   Future<void> _loadCurrentUser() async {
     final firebaseUser = FirebaseAuth.instance.currentUser;
     if (firebaseUser != null) {

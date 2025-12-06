@@ -202,7 +202,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               alignment: Alignment.centerRight,
                               child: GestureDetector(
                                 onTap: () {
-                                  Cart.add(product);
+                                  Cart_hillmi.add(product);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
