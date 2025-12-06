@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../Database/product_model.dart';
 import '../Database/user_model.dart';
 import 'keranjang_dan_Diskon/cart.dart';
@@ -38,7 +39,6 @@ class _DashboardPageState extends State<DashboardPage> {
       if (doc.exists) {
         currentUserModel = UserModel.fromJson(doc.data()!);
       } else {
-        // fallback if user doc not found
         currentUserModel = UserModel(
           useruid: firebaseUser!.uid,
           usernim: "N/A",
@@ -47,7 +47,6 @@ class _DashboardPageState extends State<DashboardPage> {
           points: 0,
         );
 
-        // save new user in Firestore
         await FirebaseFirestore.instance
             .collection("mahasiswa")
             .doc(firebaseUser!.uid)
@@ -72,27 +71,21 @@ class _DashboardPageState extends State<DashboardPage> {
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        leading: GestureDetector(
-          onTap: () {
-            if (currentUserModel != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ProfilePage(userId: currentUserModel!.useruid),
-                ),
-              );
-            }
-          },
-          child: const Padding(
-            padding: EdgeInsets.all(10),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.orange),
-            ),
-          ),
-        ),
         actions: [
+          IconButton(
+            alignment: Alignment.centerLeft,
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+            onPressed: () {
+              if (currentUserModel != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfilePage(userId: currentUserModel!.useruid),
+                  ),
+                );
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
@@ -122,7 +115,8 @@ class _DashboardPageState extends State<DashboardPage> {
       body: isLoadingUser
           ? const Center(child: CircularProgressIndicator())
           : StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection("items").snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection("items").snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -161,11 +155,19 @@ class _DashboardPageState extends State<DashboardPage> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: product.productImageUrl.isNotEmpty
-                                  ? Image.network(
-                                      product.productImageUrl,
+                                  ? CachedNetworkImage(
+                                      imageUrl: product.productImageUrl,
                                       height: 120,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          const Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(
+                                              Icons.image_not_supported,
+                                              size: 60),
                                     )
                                   : const Icon(
                                       Icons.image_not_supported,
@@ -191,7 +193,12 @@ class _DashboardPageState extends State<DashboardPage> {
                               child: GestureDetector(
                                 onTap: () {
                                   Cart.add(product);
-                                 
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          "${product.productName} added to cart"),
+                                    ),
+                                  );
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(

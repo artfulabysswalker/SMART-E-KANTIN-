@@ -99,9 +99,9 @@ class _RegisterPageState extends State<RegisterPage> {
   required String fullname,
   required String authUid,
 }) async {
-  // Use Auth UID as document ID
+  
   final newUser = UserModel(
-    useruid: authUid, // <--- Use this instead of generating a random ID
+    useruid: authUid, 
     usernim: usernim,
     email: email,
     fullname: fullname,
@@ -112,7 +112,7 @@ class _RegisterPageState extends State<RegisterPage> {
   userJson['authUid'] = authUid;
   await FirebaseFirestore.instance
       .collection('mahasiswa')
-      .doc(authUid) // <--- Use Auth UID here
+      .doc(authUid) 
       .set(userJson);
 }
 

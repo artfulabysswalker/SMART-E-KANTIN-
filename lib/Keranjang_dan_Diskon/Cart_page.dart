@@ -28,7 +28,7 @@ class _CartPageState extends State<CartPage> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("items")
-            .where('stock', isGreaterThan: 0) // Only items with stock > 0
+            .where('stock', isGreaterThan: 0)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -63,7 +63,7 @@ class _CartPageState extends State<CartPage> {
 
               final quantity = Cart.getQuantity(product);
 
-              // Only show items with quantity > 0 in cart
+              
               if (quantity == 0) return const SizedBox.shrink();
 
               return Card(
