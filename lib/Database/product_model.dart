@@ -17,7 +17,7 @@ class ProductModel {
 
   factory ProductModel.fromJson(String id, Map<String, dynamic> map) {
     return ProductModel(
-      productId: id, // <-- Use Firestore document ID
+      productId: id, 
       productImageUrl: map['productImageUrl'] ?? '',
       productName: map['productName'] ?? '',
       productPrice: (map['productPrice'] ?? 0).toDouble(),

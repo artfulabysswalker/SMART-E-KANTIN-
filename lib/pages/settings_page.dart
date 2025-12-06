@@ -1,58 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'topup_page.dart';
+import 'TransactionHistory_Page.dart';
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: const Text(
-          "Settings",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Settings", style: TextStyle(color: Colors.white)),
       ),
 
       body: ListView(
         children: [
-          // ----------- ACCOUNT SETTINGS -----------
-          ListTile(
-            leading: const Icon(Icons.person, color: Colors.orange),
-            title: const Text(
-              "Account",
-              style: TextStyle(fontSize: 16),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {},
-          ),
-
-          const Divider(),
 
           // ----------- NOTIFICATIONS -----------
-          ListTile(
-            leading: const Icon(Icons.notifications, color: Colors.orange),
-            title: const Text(
-              "Notifications",
-              style: TextStyle(fontSize: 16),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {},
-          ),
-
-          const Divider(),
+        ListTile(
+  leading: const Icon(Icons.history, color: Colors.blue),
+  title: const Text(
+    "Transaction History",
+    style: TextStyle(fontSize: 16),
+  ),
+  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+  onTap: () {
+    // Navigate to transaction history page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TransactionHistoryPage()),
+    );
+  },
+),
 
           // ----------- PRIVACY -----------
-          ListTile(
-            leading: const Icon(Icons.lock, color: Colors.orange),
-            title: const Text(
-              "Privacy",
-              style: TextStyle(fontSize: 16),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {},
-          ),
+       // ----------- WALLET -----------
+ListTile(
+  leading: const Icon(
+    Icons.account_balance_wallet,
+    color: Colors.green,
+  ),
+  title: const Text("Wallet", style: TextStyle(fontSize: 16)),
+  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TopUpPage()),
+    );
+  },
+),
+
 
           const Divider(),
 

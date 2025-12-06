@@ -1,145 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../Database/user_model.dart';
 
-class ProfilePage extends StatefulWidget {
-  final String userId;
-  const ProfilePage({super.key, required this.userId});
 
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  late double userPoints = 0;
-
-  Future<void> topUpPoints(BuildContext context, double amount) async {
-    final userRef = firestore.collection("mahasiswa").doc(widget.userId);
-
-    try {
-      final doc = await userRef.get();
-      final data = doc.data() as Map<String, dynamic>?;
-
-      final currentPoints = (data?['points'] ?? 0).toDouble();
-
-      await userRef.update({"points": currentPoints + amount});
-
-      setState(() {
-        userPoints = currentPoints + amount;
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Added $amount points!")));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Failed to add points")));
-    }
-  }
-
-  void showTopUpDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Top Up Points"),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(hintText: "Enter points"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final amount = double.tryParse(controller.text);
-                if (amount != null && amount > 0) {
-                  topUpPoints(context, amount);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text("Add"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: firestore.collection("mahasiswa").doc(widget.userId).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Scaffold(body: Center(child: Text("User not found")));
-        }
-
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-        final userPoints = (data['points'] ?? 0).toDouble();
-
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.orange,
-            title: const Text("Profile"),
-            centerTitle: true,
-            actions: [
-              GestureDetector(
-                onTap: showTopUpDialog,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.account_balance_wallet_outlined),
-                      const SizedBox(width: 4),
-                      Text(userPoints.toStringAsFixed(0)),
-                    ],
-                  ),
+void profilepage(BuildContext context, UserModel user) {
+  showDialog(
+    context: context,
+    barrierDismissible: true, // tap outside to close
+    builder: (context) {
+      return Center(
+        child: Material(
+          color: Colors.transparent, // make background transparent
+          child: Container(
+            width: 300,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
                 ),
-              ),
-            ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
+              ],
+            ),
             child: Column(
+              mainAxisSize: MainAxisSize.min, // make the container hug content
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "UID: ${data['useruid']}",
-                  style: const TextStyle(fontSize: 16),
+                  "User Info",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  "Email: ${data['email']}",
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Full Name: ${data['fullname'] ?? 'N/A'}",
-                  style: const TextStyle(fontSize: 16),
-                ),
-
-                Text(
-                  "NIM: ${data['usernim'] ?? 'N/A'}",
-                  style: const TextStyle(fontSize: 16),
+                const SizedBox(height: 12),
+                Text("UID: ${user.useruid}"),
+                Text("Email: ${user.email}"),
+                Text("Full Name: ${user.fullname}"),
+                Text("NIM: ${user.usernim}"),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Close"),
+                  ),
                 ),
               ],
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
 }

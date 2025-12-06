@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+
 import '../Database/user_model.dart';
 import 'ReceiptPage.dart';
 
@@ -8,7 +10,12 @@ class DiscountPage extends StatefulWidget {
   final double total;
   final UserModel user;
 
-  const DiscountPage({super.key, required this.cartItems, required this.total, required this.user});
+  const DiscountPage({
+    super.key,
+    required this.cartItems,
+    required this.total,
+    required this.user,
+  });
 
   @override
   State<DiscountPage> createState() => _DiscountPageState();
@@ -20,19 +27,27 @@ class _DiscountPageState extends State<DiscountPage> {
   late double shippingFee;
   late double finalTotal;
 
+  final NumberFormat rupiahFormat = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
   @override
   void initState() {
     super.initState();
     discountPercent = _calculateDiscount(widget.user.usernim);
-    // Default shipping fee (flat). If user gets free shipping, we'll set to 0.
-    const defaultShipping = 2.0;
-    // If discountPercent == 0 and last digit is even, we want free shipping.
-    // Determine shipping based on NIM parity.
+
+    const defaultShipping = 2000; // Rp2.000
     final isLastDigitEven = _isLastDigitEven(widget.user.usernim);
-    shippingFee = isLastDigitEven ? 0.0 : defaultShipping;
+
+    shippingFee = isLastDigitEven ? 0.0 : defaultShipping.toDouble();
     discountAmount = widget.total * discountPercent;
-    finalTotal = (widget.total - discountAmount + shippingFee).clamp(0, double.infinity);
+
+    finalTotal =
+        (widget.total - discountAmount + shippingFee).clamp(0, double.infinity);
   }
+
   bool _isLastDigitEven(String nim) {
     for (int i = nim.length - 1; i >= 0; i--) {
       final ch = nim[i];
@@ -45,33 +60,31 @@ class _DiscountPageState extends State<DiscountPage> {
   }
 
   double _calculateDiscount(String nim) {
-    // New rule: if last digit odd -> 5% discount; if even -> free shipping (0% discount)
     for (int i = nim.length - 1; i >= 0; i--) {
       final ch = nim[i];
       if (RegExp(r"\d").hasMatch(ch)) {
         final digit = int.tryParse(ch) ?? 0;
-        if (digit % 2 == 1) {
-          return 0.05; // 5% for odd
-        } else {
-          return 0.0; // 0% for even (free shipping instead)
-        }
+        return digit % 2 == 1 ? 0.05 : 0.0;
       }
     }
-    return 0.0; // default no discount if no digit found
+    return 0.0;
   }
 
   Future<void> _confirmDiscountTransaction(BuildContext context) async {
     final firestore = FirebaseFirestore.instance;
 
-    // 1) Check stock for each item
     for (var item in widget.cartItems) {
-      final doc = await firestore.collection('items').doc(item.product.productId).get();
+      final doc = await firestore
+          .collection('items')
+          .doc(item.product.productId)
+          .get();
       if (!doc.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${item.product.productName} not found!')),
         );
         return;
       }
+
       final stock = doc['stock'] ?? 0;
       if (item.quantity > stock) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +94,6 @@ class _DiscountPageState extends State<DiscountPage> {
       }
     }
 
-    // 2) Batch write transaction
     final batch = firestore.batch();
     final trxRef = firestore.collection('Transactions').doc();
     final trxId = trxRef.id;
@@ -108,16 +120,15 @@ class _DiscountPageState extends State<DiscountPage> {
 
     batch.set(trxRef, trxData);
 
-    // 3) Reduce stock
     for (var item in widget.cartItems) {
-      final productRef = firestore.collection('items').doc(item.product.productId);
+      final productRef =
+          firestore.collection('items').doc(item.product.productId);
       batch.update(productRef, {'stock': FieldValue.increment(-item.quantity)});
     }
 
     try {
       await batch.commit();
 
-      // Navigate to receipt page
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -135,7 +146,10 @@ class _DiscountPageState extends State<DiscountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NIM Discount'), backgroundColor: Colors.orange),
+      appBar: AppBar(
+        title: const Text('NIM Discount'),
+        backgroundColor: Colors.orange,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -143,36 +157,55 @@ class _DiscountPageState extends State<DiscountPage> {
           children: [
             Text('User: ${widget.user.fullname} (${widget.user.usernim})'),
             const SizedBox(height: 12),
-            Text('Original Total: \$${widget.total.toStringAsFixed(2)}'),
+
+            Text('Original Total: ${rupiahFormat.format(widget.total)}'),
             const SizedBox(height: 8),
+
             Text('Discount: ${(discountPercent * 100).toStringAsFixed(0)}%'),
             const SizedBox(height: 8),
-            Text('Discount Amount: \$${discountAmount.toStringAsFixed(2)}'),
+
+            Text('Discount Amount: ${rupiahFormat.format(discountAmount)}'),
             const SizedBox(height: 8),
-            Text('Shipping: \$${shippingFee.toStringAsFixed(2)}'),
+
+            Text('Shipping: ${rupiahFormat.format(shippingFee)}'),
             const SizedBox(height: 8),
-            Text('Final Total: \$${finalTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+
+            Text(
+              'Final Total: ${rupiahFormat.format(finalTotal)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+
             const SizedBox(height: 20),
+
             Expanded(
               child: ListView.builder(
                 itemCount: widget.cartItems.length,
                 itemBuilder: (context, index) {
                   final item = widget.cartItems[index];
-                  final subtotal = item.product.productPrice * item.quantity;
+                  final subtotal =
+                      item.product.productPrice * item.quantity;
+
                   return ListTile(
                     title: Text(item.product.productName),
                     subtitle: Text('Qty: ${item.quantity}'),
-                    trailing: Text('\$${subtotal.toStringAsFixed(2)}'),
+                    trailing: Text(
+                      rupiahFormat.format(subtotal),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   );
                 },
               ),
             ),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                 onPressed: () => _confirmDiscountTransaction(context),
-                child: Text('Confirm Payment (\$${finalTotal.toStringAsFixed(2)})'),
+                child: Text(
+                  'Confirm Payment (${rupiahFormat.format(finalTotal)})',
+                ),
               ),
             ),
           ],
