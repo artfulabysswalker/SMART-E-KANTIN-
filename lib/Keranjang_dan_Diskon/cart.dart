@@ -8,7 +8,7 @@ class CartItem {
   CartItem({required this.product, this.quantity = 1, this.isSelected = false});
 }
 
-class Cart {
+class Cart_hillmi {
   static List<CartItem> cart = [];
 
   // Add a product to the cart with stock limit
