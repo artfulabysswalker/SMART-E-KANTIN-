@@ -1,7 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
+/// Ignore warning untuk penggunaan context di async functions
 
+// ===== IMPORT LIBRARIES =====
+/// Material Design Flutter untuk UI components
 import 'package:flutter/material.dart';
 
+/// ForgetPasswordPage adalah halaman untuk reset password pengguna
+/// Menggunakan 2-stage verification: NIM+Email verification → Password reset
+/// Creator: Development Team
 class ForgetPasswordPage extends StatefulWidget {
   const ForgetPasswordPage({Key? key}) : super(key: key);
 
@@ -9,30 +15,35 @@ class ForgetPasswordPage extends StatefulWidget {
   State<ForgetPasswordPage> createState() => _ForgetPasswordPageState();
 }
 
+/// State class untuk ForgetPasswordPage
+/// Menangani validasi form, verifikasi credentials, dan password reset
 class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
-  // STEP 1: INPUT CONTROLLERS
-  // Controller untuk input NIM saat verifikasi
+  // ===== TEXT FIELD CONTROLLERS =====
+  /// Controller untuk input NIM saat verifikasi credentials
   final _nimController = TextEditingController();
-  // Controller untuk input email saat verifikasi
+  /// Controller untuk input email saat verifikasi credentials
   final _emailController = TextEditingController();
-  // Controller untuk input password baru
+  /// Controller untuk input password baru
   final _newPasswordController = TextEditingController();
-  // Controller untuk input konfirmasi password baru
+  /// Controller untuk input konfirmasi password baru
   final _confirmPasswordController = TextEditingController();
 
-  // STEP 2: FORM & STATE MANAGEMENT
-  // Key untuk validasi form
+  // ===== FORM & STATE VARIABLES =====
+  /// Global key untuk form validation
   final _formKey = GlobalKey<FormState>();
-  // State untuk tracking apakah credentials sudah terverifikasi
+  /// Flag untuk tracking apakah NI
+  /// M + Email sudah terverifikasi
   bool _credentialsVerified = false;
-  // State untuk loading indicator
+  /// Flag untuk menampilkan loading indicator saat proses
   bool _isLoading = false;
-  // State untuk toggle password visibility
+  /// Flag untuk toggle visibility password baru
   bool _obscureNewPassword = true;
+  /// Flag untuk toggle visibility konfirmasi password
   bool _obscureConfirmPassword = true;
 
-  // STEP 3: FUNGSI-FUNGSI VALIDASI
-  // Validasi NIM: tidak boleh kosong dan minimal 8 karakter
+  // ===== VALIDATION FUNCTIONS =====
+  
+  /// Validasi NIM: memastikan tidak kosong dan minimal 8 karakter
   String? _validateNIM(String? value) {
     if (value == null || value.isEmpty) {
       return 'NIM tidak boleh kosong';
@@ -43,12 +54,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     return null;
   }
 
-  // Validasi Email: menggunakan regex untuk format email
+  /// Validasi Email: menggunakan regex untuk format yang valid
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email tidak boleh kosong';
     }
-    // Regex pattern untuk validasi email
+    // Regex pattern untuk validasi format email
     const emailPattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
     final regex = RegExp(emailPattern);
     if (!regex.hasMatch(value)) {
@@ -57,7 +68,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     return null;
   }
 
-  // Validasi Password Baru: tidak boleh kosong dan minimal 6 karakter
+  /// Validasi Password Baru: tidak boleh kosong dan minimal 6 karakter
   String? _validateNewPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password baru tidak boleh kosong';
@@ -68,7 +79,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     return null;
   }
 
-  // Validasi Confirm Password: harus sama dengan password baru
+  /// Validasi Konfirmasi Password: harus sama dengan password baru
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Konfirmasi password tidak boleh kosong';
@@ -79,24 +90,38 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     return null;
   }
 
-  // STEP 4: FUNGSI VERIFIKASI CREDENTIALS (NIM + EMAIL)
-  // Fungsi async untuk verifikasi NIM dan Email di database
+  // ===== VERIFICATION & RESET FUNCTIONS =====
+  
+  /// Verifikasi NIM dan Email user
+  /// STEP 1: Validasi form
+  /// STEP 2: Query ke database untuk cek NIM + Email match
+  /// STEP 3: Set credentialsVerified = true jika valid
   Future<void> _verifyCredentials() async {
-    // Validasi form terlebih dahulu
+    // Validasi form input terlebih dahulu
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Set loading true
+    // Tampilkan loading indicator
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Simulasi delay untuk proses verifikasi database (1 detik)
+      // STEP 1: Simulasi delay untuk proses verifikasi database (1 detik)
       await Future.delayed(const Duration(seconds: 1));
 
-      // Sekarang set ke true, ubah ke false jika ingin test tidak ketemu
+      // TODO: Ganti dengan actual Firestore query untuk verifikasi NIM + Email
+      // Contoh query:
+      // QuerySnapshot result = await FirebaseFirestore.instance
+      //     .collection('mahasiswa')
+      //     .where('usernim', isEqualTo: _nimController.text)
+      //     .where('email', isEqualTo: _emailController.text)
+      //     .limit(1)
+      //     .get();
+      // bool credentialsValid = result.docs.isNotEmpty;
+      
+      // Untuk testing: set ke true, ubah ke false jika ingin test error case
       bool credentialsValid = true;
 
       // Set loading false untuk mengakhiri proses loading
@@ -104,98 +129,118 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         _isLoading = false;
       });
 
-      // Jika NIM dan Email valid
+      // STEP 2: Cek apakah NIM dan Email valid
       if (credentialsValid) {
-        // Update state untuk menampilkan form reset password
+        // Update state untuk menampilkan form reset password (2nd stage)
         setState(() {
           _credentialsVerified = true;
         });
 
         // Tampilkan pesan sukses
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('NIM dan Email terverifikasi! Silakan buat password baru'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('NIM dan Email terverifikasi! Silakan buat password baru'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
-      // Set loading false
+      // Set loading false jika terjadi error
       setState(() {
         _isLoading = false;
       });
 
       // Tampilkan pesan error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  // STEP 5: FUNGSI RESET PASSWORD
-  // Fungsi async untuk update password di database
+  /// Reset password user dengan password baru
+  /// STEP 1: Validasi form input (password requirements)
+  /// STEP 2: Update password di database
+  /// STEP 3: Kembali ke login page
   Future<void> _resetPassword() async {
-    // Validasi form terlebih dahulu
+    // Validasi form input terlebih dahulu
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Set loading true
+    // Tampilkan loading indicator
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Simulasi delay untuk proses update password (2 detik)
+      // STEP 1: Simulasi delay untuk proses update password (2 detik)
       await Future.delayed(const Duration(seconds: 2));
 
-      // TODO: Ganti simulasi ini dengan update Firestore sebenarnya
-      // Contoh Firestore update password:
-      // await FirebaseFirestore.instance
-      //     .collection('mahasiswa')
-      //     .doc(_nimController.text)
-      //     .update({
-      //   'password': _newPasswordController.text, // Sebaiknya encrypt password
-      //   'updatedAt': FieldValue.serverTimestamp(),
-      // });
+      // TODO: Ganti simulasi ini dengan update Firebase Auth sebenarnya
+      // Contoh menggunakan Firebase Password Reset:
+      // 1. Get current user dari Firebase Auth
+      // 2. Update password menggunakan updatePassword()
+      // 3. Update data di Firestore jika diperlukan
+      // Contoh code:
+      // User? user = FirebaseAuth.instance.currentUser;
+      // if (user != null) {
+      //   await user.updatePassword(_newPasswordController.text);
+      //   await FirebaseFirestore.instance
+      //       .collection('mahasiswa')
+      //       .doc(user.uid)
+      //       .update({
+      //     'passwordChangedAt': FieldValue.serverTimestamp(),
+      //   });
+      // }
 
-      // Set loading false
+      // Set loading false setelah selesai
       setState(() {
         _isLoading = false;
       });
 
-      // Tampilkan pesan sukses
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password berhasil diubah! Silakan login dengan password baru'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // STEP 2: Tampilkan pesan sukses
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password berhasil diubah! Silakan login dengan password baru'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
 
-      // Navigate kembali ke login page
-      Navigator.pop(context);
+      // STEP 3: Kembali ke halaman login
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } catch (e) {
-      // Set loading false
+      // Set loading false jika terjadi error
       setState(() {
         _isLoading = false;
       });
 
       // Tampilkan pesan error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
+  /// Cleanup semua text controllers saat widget di-destroy
   @override
   void dispose() {
-    // Dispose semua controller
+    // Dispose semua text field controllers
     _nimController.dispose();
     _emailController.dispose();
     _newPasswordController.dispose();
@@ -203,19 +248,26 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     super.dispose();
   }
 
+  // ====================== UI BUILD FUNCTION ======================
+  
+  /// Build method untuk membuat UI forget password page
+  /// Menampilkan 2-stage UI berdasarkan credentialsVerified state
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // App bar dengan judul
       appBar: AppBar(
         title: const Text('Lupa Password'),
       ),
+      // Body dengan scrollable area dan form
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              // STEP 6: UI - JUDUL
+              // ======= PAGE TITLE ========
+              /// Judul halaman reset password
               const Padding(
                 padding: EdgeInsets.only(bottom: 24.0),
                 child: Text(
@@ -251,7 +303,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // STEP 8: UI - INPUT EMAIL (TAHAP VERIFIKASI)
+                // ======= EMAIL INPUT (VERIFICATION STAGE) ========
+                /// Input field untuk email saat tahap verifikasi
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -263,7 +316,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // STEP 9: UI - TOMBOL VERIFIKASI
+                // ======= VERIFY BUTTON ========
+                /// Tombol untuk verifikasi NIM + Email
                 ElevatedButton(
                   onPressed: _isLoading ? null : _verifyCredentials,
                   style: ElevatedButton.styleFrom(
@@ -281,7 +335,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                       : const Text('Verifikasi'),
                 ),
               ] else ...[
-                // JIKA SUDAH VERIFIKASI: TAMPILKAN FORM RESET PASSWORD
+                // ======= PASSWORD RESET STAGE (AFTER VERIFICATION) ========
+                /// Tampilkan form reset password setelah verifikasi berhasil
 
                 // Teks keterangan
                 const Padding(
@@ -292,7 +347,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                   ),
                 ),
 
-                // STEP 10: UI - INPUT PASSWORD BARU
+                // ======= NEW PASSWORD INPUT ========
+                /// Input field untuk password baru
                 TextFormField(
                   controller: _newPasswordController,
                   obscureText: _obscureNewPassword,
@@ -300,6 +356,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     labelText: 'Password Baru',
                     border: const OutlineInputBorder(),
                     hintText: 'Masukkan password baru (minimal 6 karakter)',
+                    // Icon untuk toggle show/hide password
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
@@ -315,7 +372,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // STEP 11: UI - INPUT CONFIRM PASSWORD BARU
+                // ======= CONFIRM PASSWORD INPUT ========
+                /// Input field untuk konfirmasi password baru
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -323,6 +381,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     labelText: 'Konfirmasi Password',
                     border: const OutlineInputBorder(),
                     hintText: 'Masukkan ulang password baru',
+                    // Icon untuk toggle show/hide password
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
@@ -338,7 +397,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // STEP 12: UI - TOMBOL RESET PASSWORD
+                // ======= RESET PASSWORD BUTTON ========
+                /// Tombol untuk submit password baru
                 ElevatedButton(
                   onPressed: _isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(
@@ -356,12 +416,15 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                       : const Text('Atur Ulang Password'),
                 ),
 
-                // STEP 13: UI - TOMBOL KEMBALI KE VERIFIKASI
+                // ======= BACK TO VERIFICATION BUTTON ========
+                /// Tombol untuk kembali ke tahap verifikasi
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () {
                     setState(() {
+                      // Reset state ke verification stage
                       _credentialsVerified = false;
+                      // Clear semua input fields
                       _nimController.clear();
                       _emailController.clear();
                       _newPasswordController.clear();

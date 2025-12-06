@@ -1,45 +1,65 @@
-import 'package:ekantin/dashboard_page.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../Database/user_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ===== IMPORT LIBRARIES =====
+import 'package:ekantin/dashboard_page.dart'; // Untuk navigasi ke dashboard
+import 'package:flutter/material.dart'; // Flutter UI framework
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import '../Database/user_model.dart'; // Model data pengguna
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
 
+/// RegisterPage adalah halaman untuk pendaftaran akun pengguna baru
+/// Memungkinkan user memasukkan NIM, nama, email, dan password
+/// Creator: mathew, zenvero
 class RegisterPage extends StatefulWidget {
-  //pembuat mathew 
-  // callback to show login page
+  // Callback untuk menampilkan halaman login (opsional)
   final VoidCallback? showLoginPage;
   const RegisterPage({Key? key, this.showLoginPage}) : super(key: key);
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
-// pembuat zenvero
+
+/// State class untuk RegisterPage
+/// Menangani validasi form, Firebase auth, dan Firestore data storage
+/// Creator: zenvero
 class _RegisterPageState extends State<RegisterPage> {
+  // ===== TEXT FIELD CONTROLLERS =====
+  /// Controller untuk input NIM (Nomor Induk Mahasiswa)
   final _nimController = TextEditingController();
+  /// Controller untuk input nama lengkap mahasiswa
   final _nameController = TextEditingController();
+  /// Controller untuk input email
   final _emailController = TextEditingController();
+  /// Controller untuk input password
   final _passwordController = TextEditingController();
+  /// Controller untuk konfirmasi password
   final _confirmPasswordController = TextEditingController();
-//pembuat zenvero
+
+  // ===== FORM & STATE VARIABLES =====
+  /// Global key untuk mengelola state form dan validasi
   final _formKey = GlobalKey<FormState>();
+  /// Flag untuk toggle visibility password field
   bool _obscurePassword = true;
+  /// Flag untuk toggle visibility confirm password field
   bool _obscureConfirmPassword = true;
+  /// Flag untuk menampilkan loading indicator saat proses registrasi
   bool _isLoading = false;
 
-  // --- VALIDATIONS ---
-  // pembuat zenvero
+  // ===== VALIDATION FUNCTIONS =====
+  /// Validasi NIM: memastikan NIM tidak kosong dan minimal 8 karakter
+  /// Creator: zenvero
   String? _validateNIM(String? value) {
     if (value == null || value.trim().isEmpty) return 'NIM tidak boleh kosong';
     if (value.trim().length < 8) return 'NIM minimal 8 karakter';
     return null;
   }
 
+  /// Validasi nama: memastikan nama tidak kosong dan minimal 2 karakter
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) return 'Nama tidak boleh kosong';
     if (value.trim().length < 2) return 'Nama terlalu pendek';
     return null;
   }
 
+  /// Validasi email: menggunakan regex untuk format email yang valid
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty)
       return 'Email tidak boleh kosong';
@@ -49,20 +69,23 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
+  /// Validasi password: memastikan password tidak kosong dan minimal 6 karakter
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Password tidak boleh kosong';
     if (value.length < 6) return 'Password minimal 6 karakter';
     return null;
   }
 
+  /// Validasi konfirmasi password: memastikan cocok dengan password field
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) return 'Konfirmasi password kosong';
     if (value != _passwordController.text) return 'Password tidak cocok';
     return null;
   }
 
+  /// Cleanup semua text controllers saat widget di-dispose
+  /// Creator: zenvero
   @override
-  // pembuat zenvero
   void dispose() {
     _nimController.dispose();
     _nameController.dispose();
@@ -73,7 +96,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ===== FIREBASE FUNCTIONS =====
-  // pembuat Mathew
+
+  /// Cek apakah NIM sudah terdaftar di Firestore
+  /// Melakukan query ke collection 'mahasiswa' dengan field 'usernim'
+  /// Creator: Mathew
   Future<bool> _nimExists(String nim) async {
     final q = await FirebaseFirestore.instance
         .collection('mahasiswa')
@@ -83,6 +109,8 @@ class _RegisterPageState extends State<RegisterPage> {
     return q.docs.isNotEmpty;
   }
 
+  /// Buat user baru di Firebase Authentication
+  /// Menggunakan email dan password untuk sign up
   Future<UserCredential> _createFirebaseUser({
     required String email,
     required String password,
@@ -93,13 +121,15 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  /// Simpan data user detail ke Firestore collection 'mahasiswa'
+  /// Menyimpan: uid, nim, email, nama lengkap, dan points
   Future<void> _addUserDetails({
   required String usernim,
   required String email,
   required String fullname,
   required String authUid,
 }) async {
-  
+  // Buat object UserModel dengan data yang diberikan
   final newUser = UserModel(
     useruid: authUid, 
     usernim: usernim,
@@ -108,27 +138,39 @@ class _RegisterPageState extends State<RegisterPage> {
     points: 0.0,
   );
 
+  // Konversi model ke JSON dan tambahkan authUid
   final userJson = newUser.toJson();
   userJson['authUid'] = authUid;
+  
+  // Simpan ke Firestore dengan document ID = authUid
   await FirebaseFirestore.instance
       .collection('mahasiswa')
       .doc(authUid) 
       .set(userJson);
 }
 
-  // ===== REGISTER FUNCTION =====
-  // pembuat zenvero
+  // ===== MAIN REGISTER FUNCTION =====
+  /// Proses registrasi user baru dengan langkah-langkah berikut:
+  /// 1. Validasi form input
+  /// 2. Cek NIM tidak sudah terdaftar
+  /// 3. Buat user di Firebase Auth
+  /// 4. Simpan detail user ke Firestore
+  /// Creator: zenvero
   Future<void> _register() async {
+    // Validasi semua input field terlebih dahulu
     if (!_formKey.currentState!.validate()) return;
 
+    // Ambil dan trim semua input
     final nim = _nimController.text.trim();
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // Tampilkan loading indicator
     setState(() => _isLoading = true);
 
     try {
+      // STEP 1: Cek apakah NIM sudah terdaftar
       if (await _nimExists(nim)) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -140,12 +182,14 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
+      // STEP 2: Buat user di Firebase Authentication
       UserCredential cred;
       try {
         cred = await _createFirebaseUser(email: email, password: password);
       } on FirebaseAuthException catch (e) {
         setState(() => _isLoading = false);
 
+        // Tampilkan error message yang sesuai dengan error code Firebase
         String message = 'Terjadi kesalahan.';
         if (e.code == 'email-already-in-use')
           message = 'Email sudah digunakan.';
@@ -158,8 +202,10 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
+      // Ambil UID dari user yang baru dibuat
       final uid = cred.user?.uid ?? '';
 
+      // STEP 3: Simpan detail user ke Firestore
       try {
         await _addUserDetails(
           usernim: nim,
@@ -168,6 +214,7 @@ class _RegisterPageState extends State<RegisterPage> {
           authUid: uid,
         );
       } catch (e) {
+        // Jika gagal simpan ke Firestore, hapus user dari Firebase Auth
         await cred.user?.delete();
         setState(() => _isLoading = false);
 
@@ -180,6 +227,7 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
+      // Registrasi sukses
       setState(() => _isLoading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -189,6 +237,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
 
+      // Navigasi ke dashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const DashboardPage()),
@@ -201,23 +250,28 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  // ====================== UI START ======================
-  //pembuat Baruna
+  // ====================== UI BUILD FUNCTION ======================
+  /// Builder untuk membuat UI register page dengan tema dark
+  /// Creator: Baruna
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Background warna gelap untuk dark theme
       backgroundColor: const Color(0xFF1E1E1E),
-//app bar
+      
+      // App bar dengan warna orange dan teks putih
       appBar: AppBar(
         backgroundColor: Colors.orange,
         title: const Text("Register", style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
 
+      // Body dengan SingleChildScrollView agar responsif
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ======= TOP HEADER ========
+            // ======= TOP HEADER SECTION ========
+            /// Header dengan background pattern dan welcome text
             Container(
               height: 250,
               width: double.infinity,
@@ -249,7 +303,8 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
 
-            // ======= WHITE CARD =======
+            // ======= WHITE CARD FOR FORM ========
+            /// Card putih dengan form input menggunakan Transform untuk overlap effect
             Transform.translate(
               offset: const Offset(0, -40),
               child: Container(
@@ -265,13 +320,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ================= NIM ==================
+                      // ================= NIM INPUT FIELD ==================
+                      /// Label untuk field NIM
                       const Text(
                         "NIM",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 5),
-
+                      /// Input field untuk NIM dengan custom styling
                       _inputField(
                         controller: _nimController,
                         validator: _validateNIM,
@@ -280,13 +336,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 15),
 
-                      // ================= FULL NAME ==================
+                      // ================= FULL NAME INPUT FIELD ==================
+                      /// Label untuk field nama lengkap
                       const Text(
                         "Nama Lengkap",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 5),
-
+                      /// Input field untuk nama dengan custom styling
                       _inputField(
                         controller: _nameController,
                         validator: _validateName,
@@ -295,13 +352,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 15),
 
-                      // ================= EMAIL ==================
+                      // ================= EMAIL INPUT FIELD ==================
+                      /// Label untuk field email
                       const Text(
                         "Email",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 5),
-
+                      /// Input field untuk email dengan custom styling
                       _inputField(
                         controller: _emailController,
                         validator: _validateEmail,
@@ -310,13 +368,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 15),
 
-                      // ================= PASSWORD ==================
+                      // ================= PASSWORD INPUT FIELD ==================
+                      /// Label untuk field password
                       const Text(
                         "Password",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 5),
-
+                      /// Password field dengan toggle visibility icon
                       _passwordField(
                         controller: _passwordController,
                         obscure: _obscurePassword,
@@ -328,13 +387,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       const SizedBox(height: 15),
 
-                      // ================= CONFIRM PASSWORD ==================
+                      // ================= CONFIRM PASSWORD INPUT FIELD ==================
+                      /// Label untuk field konfirmasi password
                       const Text(
                         "Konfirmasi Password",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 5),
-
+                      /// Confirm password field dengan toggle visibility icon
                       _passwordField(
                         controller: _confirmPasswordController,
                         obscure: _obscureConfirmPassword,
@@ -348,6 +408,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 25),
 
                       // ================= REGISTER BUTTON ==================
+                      /// Tombol register dengan loading indicator
                       GestureDetector(
                         onTap: _isLoading ? null : _register,
                         child: Container(
@@ -378,6 +439,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 20),
 
                       // ================= LOGIN LINK ==================
+                      /// Link untuk masuk ke halaman login jika sudah punya akun
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -406,8 +468,11 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // ======== INPUT FIELD ==========
-  // pembuat zenvero dan Baruna
+  // ======== HELPER WIDGET FUNCTIONS ========
+
+  /// Widget untuk input field biasa (NIM, Nama, Email)
+  /// Menampilkan container dengan background abu-abu dan border radius
+  /// Creator: zenvero, Baruna
   Widget _inputField({
     required TextEditingController controller,
     required FormFieldValidator<String> validator,
@@ -416,7 +481,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F4),
+        color: const Color(0xFFF4F4F4), // Background abu-abu
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextFormField(
@@ -431,8 +496,9 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // ======== PASSWORD FIELD ==========
-   // pembuat zenvero dan Baruna
+  /// Widget untuk password field dengan toggle visibility
+  /// Menampilkan password/dots dan icon untuk show/hide
+  /// Creator: zenvero, Baruna
   Widget _passwordField({
     required TextEditingController controller,
     required bool obscure,
@@ -442,17 +508,18 @@ class _RegisterPageState extends State<RegisterPage> {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F4),
+        color: const Color(0xFFF4F4F4), // Background abu-abu
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextFormField(
         controller: controller,
-        obscureText: obscure,
+        obscureText: obscure, // Toggle untuk show/hide password
         validator: validator,
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: "***********",
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          // Icon untuk toggle visibility
           suffixIcon: IconButton(
             icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
             onPressed: onToggle,
