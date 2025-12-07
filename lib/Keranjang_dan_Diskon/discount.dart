@@ -1,14 +1,13 @@
+import 'package:ekantin/models/user_model_A1.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-
-import '../Database/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'ReceiptPage.dart';
 
 class DiscountPage extends StatefulWidget {
   final List cartItems;
   final double total;
-  final UserModel user;
+  final UserModel_A1 user;
 
   const DiscountPage({
     super.key,
@@ -44,10 +43,12 @@ class _DiscountPageState extends State<DiscountPage> {
     shippingFee = isLastDigitEven ? 0.0 : defaultShipping.toDouble();
     discountAmount = widget.total * discountPercent;
 
+// Total akhir setelah diskon dan ongkir
     finalTotal =
         (widget.total - discountAmount + shippingFee).clamp(0, double.infinity);
   }
 
+// cek apakah digit terakhir NIM genap
   bool _isLastDigitEven(String nim) {
     for (int i = nim.length - 1; i >= 0; i--) {
       final ch = nim[i];
@@ -59,6 +60,7 @@ class _DiscountPageState extends State<DiscountPage> {
     return false;
   }
 
+// kalkuasi diskon berdasarkan digit terakhir NIM
   double _calculateDiscount(String nim) {
     for (int i = nim.length - 1; i >= 0; i--) {
       final ch = nim[i];
@@ -76,7 +78,7 @@ class _DiscountPageState extends State<DiscountPage> {
     for (var item in widget.cartItems) {
       final doc = await firestore
           .collection('items')
-          .doc(item.product.productId)
+          .doc(item.product.productId_A1)
           .get();
       if (!doc.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -107,22 +109,23 @@ class _DiscountPageState extends State<DiscountPage> {
       'status': 'Success',
       'items': widget.cartItems
           .map((e) => {
-                'productId': e.product.productId,
+                'productId': e.product.productId_A1,
                 'name': e.product.productName,
                 'price': e.product.productPrice,
                 'qty': e.quantity,
               })
           .toList(),
-      'userId': widget.user.useruid,
+      'userId': widget.user.useruid_A1,
       'payment_method': 'NIM Discount',
       'created_at': FieldValue.serverTimestamp(),
     };
 
     batch.set(trxRef, trxData);
 
+// Pengurangan stok barang
     for (var item in widget.cartItems) {
       final productRef =
-          firestore.collection('items').doc(item.product.productId);
+          firestore.collection('items').doc(item.product.productId_A1);
       batch.update(productRef, {'stock': FieldValue.increment(-item.quantity)});
     }
 
@@ -132,7 +135,7 @@ class _DiscountPageState extends State<DiscountPage> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute( // Removed const
           builder: (_) => ReceiptPage(trxData: trxData),
         ),
       );
@@ -155,7 +158,7 @@ class _DiscountPageState extends State<DiscountPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('User: ${widget.user.fullname} (${widget.user.usernim})'),
+            Text('User: ${widget.user.fullName_A1} (${widget.user.usernim_A1})'),
             const SizedBox(height: 12),
 
             Text('Original Total: ${rupiahFormat.format(widget.total)}'),

@@ -1,9 +1,11 @@
+import 'package:ekantin/Keranjang_dan_Diskon/cart.dart';
+import 'package:ekantin/models/user_model_A1.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'pointspage.dart';
 import 'discount.dart';
-import '../Database/user_model.dart';
+import 'PointPage.dart';
+import 'Cart_page.dart';
+
 
 class TransactionPage extends StatefulWidget {
   final List<CartItem> cartItems;
@@ -20,7 +22,7 @@ class TransactionPage extends StatefulWidget {
 }
 
 class _TransactionPageState extends State<TransactionPage> {
-  UserModel? currentUser;
+  UserModel_A1? currentUser;
   bool isLoading = true;
 
   @override
@@ -38,14 +40,14 @@ class _TransactionPageState extends State<TransactionPage> {
           .get();
 
       if (doc.exists) {
-        currentUser = UserModel.fromJson(doc.data()!);
+        currentUser = UserModel_A1.fromJson_A1(doc.data()!);
       } else {
-        currentUser = UserModel(
-          useruid: firebaseUser.uid,
+        currentUser = UserModel_A1(
+          useru: firebaseUser.uid,
           usernim: "N/A",
-          email: firebaseUser.email ?? "",
-          fullname: firebaseUser.displayName ?? "Unknown",
-          points: 0,
+          email_A1: firebaseUser.email ?? "",
+          fullName_A1: firebaseUser.displayName ?? "Unknown",
+          point: 0,
         );
       }
     }

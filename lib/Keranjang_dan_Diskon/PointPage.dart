@@ -1,14 +1,15 @@
+import 'package:ekantin/models/user_model_A1.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../Database/user_model.dart';
-import 'receiptpage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'receiptpage.dart';
 import 'cart.dart';
+
 
 class PointsPage extends StatefulWidget {
   final List<CartItem> cartItems;
   final double total;
-  final UserModel user;
+  final UserModel_A1 user;
   final NumberFormat rupiah = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   const PointsPage({
@@ -44,7 +45,7 @@ class _PointsPageState extends State<PointsPage> {
     // 2️⃣ Check stock for each item
     for (var item in widget.cartItems) {
       final doc =
-          await firestore.collection('items').doc(item.product.productId).get();
+          await firestore.collection('items').doc(item.product.productId_A1).get();
       if (!doc.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("${item.product.productName} not found!")),
@@ -74,25 +75,25 @@ class _PointsPageState extends State<PointsPage> {
       "status": "Success",
       "items": widget.cartItems
           .map((e) => {
-                "productId": e.product.productId,
+                "productId": e.product.productId_A1,
                 "name": e.product.productName,
                 "price": e.product.productPrice,
                 "qty": e.quantity,
               })
           .toList(),
-      "userId": widget.user.useruid,
+      "userId": widget.user.userId_A1,
       "created_at": FieldValue.serverTimestamp(),
     };
     batch.set(trxRef, trxData);
 
     // Deduct points
-    final userRef = firestore.collection("mahasiswa").doc(widget.user.useruid);
+    final userRef = firestore.collection("mahasiswa").doc(widget.user.useruid_A1);
     final remainingPoints = (widget.user.points - widget.total).clamp(0, double.infinity);
     batch.update(userRef, {"points": remainingPoints});
 
     // Reduce stock
     for (var item in widget.cartItems) {
-      final productRef = firestore.collection("items").doc(item.product.productId);
+      final productRef = firestore.collection("items").doc(item.product.productId_A1);
       batch.update(productRef, {"stock": FieldValue.increment(-item.quantity)});
     }
 
@@ -104,7 +105,7 @@ class _PointsPageState extends State<PointsPage> {
       // Navigate to receipt page
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute( // Removed const
           builder: (_) => ReceiptPage(trxData: trxData as Map<String, dynamic>),
         ),
       );

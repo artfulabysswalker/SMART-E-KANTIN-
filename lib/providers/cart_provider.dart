@@ -6,22 +6,22 @@ import '../models/product_model_A1.dart';
 
 
 // Data Model sederhana untuk item di keranjang (D4)
-class CartItem_D4 {
+class CartItem_hillmi {
   final String productId;
   final String name;
   final double price;
   int quantity;
 
-  CartItem_D4({required this.productId, required this.name, required this.price, this.quantity = 1});
+  CartItem_hillmi({required this.productId, required this.name, required this.price, this.quantity = 1});
 }
 
 // Watermark Code: class name with suffix
 class CartProvider_D4 with ChangeNotifier {
-  final Map<String, CartItem_D4> _items_D4 = {};
+  final Map<String, CartItem_hillmi> _items_D4 = {};
   double _subTotal_D4 = 0.0;
   double _shippingFee_D4 = 15000.0; 
 
-  List<CartItem_D4> get items_D4 => _items_D4.values.toList();
+  List<CartItem_hillmi> get items_D4 => _items_D4.values.toList();
   double get subTotal_D4 => _subTotal_D4;
   double get shippingFee_D4 => _shippingFee_D4;
 
@@ -42,7 +42,7 @@ class CartProvider_D4 with ChangeNotifier {
     } else {
       _items_D4.putIfAbsent(
         product.productId_A1, 
-        () => CartItem_D4(
+        () => CartItem_hillmi(
           productId: product.productId_A1, 
           name: product.name_A1, 
           price: product.price_A1

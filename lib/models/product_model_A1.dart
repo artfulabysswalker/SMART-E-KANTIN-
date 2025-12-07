@@ -25,6 +25,10 @@ class ProductModel_A1 {
     );
   }
 
+  get productPrice => null;
+
+  String? get productName => null;
+
   Map<String, dynamic> toJson_A1() {
     return {
       'product_id': productId_A1,
