@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../Database/user_model.dart';
 import 'receiptpage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'cart.dart';
 
-class PointsPage extends StatelessWidget {
-  final List cartItems;
+class PointsPage extends StatefulWidget {
+  final List<CartItem> cartItems;
   final double total;
   final UserModel user;
+  final NumberFormat rupiah = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   const PointsPage({
     super.key,
@@ -15,19 +18,31 @@ class PointsPage extends StatelessWidget {
     required this.user,
   });
 
+  @override
+  State<PointsPage> createState() => _PointsPageState();
+}
+
+class _PointsPageState extends State<PointsPage> {
+  bool _isLoading = false;
+
   Future<void> confirmTransaction(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final firestore = FirebaseFirestore.instance;
 
     // 1️⃣ Ensure user has enough points
-    if (user.points < total) {
+    if (widget.user.points < widget.total) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Insufficient points!")),
       );
+      setState(() => _isLoading = false);
       return;
     }
 
     // 2️⃣ Check stock for each item
-    for (var item in cartItems) {
+    for (var item in widget.cartItems) {
       final doc =
           await firestore.collection('items').doc(item.product.productId).get();
       if (!doc.exists) {
@@ -43,6 +58,7 @@ class PointsPage extends StatelessWidget {
               content: Text(
                   "Not enough stock for ${item.product.productName}")),
         );
+        setState(() => _isLoading = false);
         return;
       }
     }
@@ -54,9 +70,9 @@ class PointsPage extends StatelessWidget {
 
     final trxData = {
       "trx_id": trxId,
-      "total": total,
+      "total": widget.total,
       "status": "Success",
-      "items": cartItems
+      "items": widget.cartItems
           .map((e) => {
                 "productId": e.product.productId,
                 "name": e.product.productName,
@@ -64,38 +80,40 @@ class PointsPage extends StatelessWidget {
                 "qty": e.quantity,
               })
           .toList(),
-      "userId": user.useruid,
+      "userId": widget.user.useruid,
       "created_at": FieldValue.serverTimestamp(),
     };
     batch.set(trxRef, trxData);
 
     // Deduct points
-    final userRef = firestore.collection("mahasiswa").doc(user.useruid);
-    final remainingPoints = (user.points - total).clamp(0, double.infinity);
+    final userRef = firestore.collection("mahasiswa").doc(widget.user.useruid);
+    final remainingPoints = (widget.user.points - widget.total).clamp(0, double.infinity);
     batch.update(userRef, {"points": remainingPoints});
 
     // Reduce stock
-    for (var item in cartItems) {
+    for (var item in widget.cartItems) {
       final productRef = firestore.collection("items").doc(item.product.productId);
       batch.update(productRef, {"stock": FieldValue.increment(-item.quantity)});
     }
 
     try {
       await batch.commit();
-      // Optional: update local user points if you want instant feedback
-      user.points = remainingPoints.toDouble();
+
+      Cart.clear();
 
       // Navigate to receipt page
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => ReceiptPage(trxData: trxData),
+          builder: (_) => ReceiptPage(trxData: trxData as Map<String, dynamic>),
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Transaction failed!")),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -108,9 +126,9 @@ class PointsPage extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Center(
+            child: Align(
               child: Text(
-                "Points: ${user.points.toStringAsFixed(2)}",
+                "Points: ${widget.user.points.toStringAsFixed(2)}",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -121,15 +139,15 @@ class PointsPage extends StatelessWidget {
         ],
       ),
       body: ListView.builder(
-        itemCount: cartItems.length,
+        itemCount: widget.cartItems.length,
         itemBuilder: (context, index) {
-          final item = cartItems[index];
+          final item = widget.cartItems[index];
           final subtotal = item.product.productPrice * item.quantity;
 
           return ListTile(
             title: Text(item.product.productName),
             subtitle: Text("Qty: ${item.quantity}"),
-            trailing: Text("\$${subtotal.toStringAsFixed(2)}"),
+            trailing: Text(widget.rupiah.format(subtotal)),
           );
         },
       ),
@@ -137,11 +155,13 @@ class PointsPage extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-          onPressed: () => confirmTransaction(context),
-          child: Text(
-            "Pay with Points (${total.toStringAsFixed(2)} pts)",
-            style: const TextStyle(fontSize: 16),
-          ),
+          onPressed: _isLoading ? null : () => confirmTransaction(context),
+          child: _isLoading
+              ? const CircularProgressIndicator(color: Colors.white)
+              : Text(
+                  "Pay with Points (${widget.total.toStringAsFixed(2)} pts)",
+                  style: const TextStyle(fontSize: 16),
+                ),
         ),
       ),
     );

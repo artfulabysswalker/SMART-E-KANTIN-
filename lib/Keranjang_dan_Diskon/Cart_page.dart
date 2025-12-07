@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 import 'cart.dart';
@@ -33,107 +32,77 @@ class _CartPageState extends State<CartPage> {
         ),
         centerTitle: true,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("items")
-            .where('stock', isGreaterThan: 0)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: cart.isEmpty
+          ? const Center(
+              child: Text("Your cart is empty.",
+                  style: TextStyle(fontSize: 18, color: Colors.grey)))
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: cart.length,
+              itemBuilder: (context, index) {
+                final cartItem = cart[index];
+                final product = cartItem.product;
 
-          if (snapshot.hasError) {
-            return const Center(child: Text("Error loading data"));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("No items found"));
-          }
-
-          final docs = snapshot.data!.docs;
-
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              final product = ProductModel(
-                productId: doc.id,
-                productName: data['productName'] ?? 'Unnamed',
-                productPrice: (data['productPrice'] ?? 0).toDouble(),
-                stock: data['stock'] ?? 0,
-                productDescription: data['productDescription'] ?? '',
-                productImageUrl: '', // No image
-              );
-
-              final quantity = Cart.getQuantity(product);
-
-              if (quantity == 0) return const SizedBox.shrink();
-
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                return Card(
+                  elevation: 2,
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.productName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                rupiah.format(product.productPrice),
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
                           children: [
-                            Text(
-                              product.productName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle,
+                                  color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  Cart.removeOne(product);
+                                });
+                              },
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              rupiah.format(product.productPrice),
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 14),
+                            Text(cartItem.quantity.toString(),
+                                style: const TextStyle(fontSize: 16)),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle,
+                                  color: Colors.green),
+                              onPressed: () {
+                                setState(() {
+                                  Cart.add(product);
+                                });
+                              },
                             ),
                           ],
                         ),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle,
-                                color: Colors.red),
-                            onPressed: () {
-                              setState(() {
-                                Cart.removeOne(product);
-                              });
-                            },
-                          ),
-                          Text(quantity.toString(),
-                              style: const TextStyle(fontSize: 16)),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle,
-                                color: Colors.green),
-                            onPressed: () {
-                              setState(() {
-                                Cart.add(product);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                );
+              },
+            ),
       bottomNavigationBar: cart.isEmpty
           ? null
           : Padding(

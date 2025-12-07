@@ -6,7 +6,7 @@ import 'discount.dart';
 import '../Database/user_model.dart';
 
 class TransactionPage extends StatefulWidget {
-  final List cartItems;
+  final List<CartItem> cartItems;
   final double total;
 
   const TransactionPage({
